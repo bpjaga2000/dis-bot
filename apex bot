@@ -1,0 +1,65 @@
+import discord
+from discord.ext import commands
+import typing
+
+TOKEN = 'NzEzNzExNDkzNzQ4ODgzNDU3.XswPQA.DPbfpfoJJ8gtL1B2h7lFfryOcD0'
+C_PREFIX = '!'
+
+ApexBot = commands.Bot(command_prefix=C_PREFIX, case_insensitive=True)
+ApexBot.i = []
+
+ApexBot.err_embed = discord.Embed(colour=0xFF1111)
+ApexBot.err_embed.add_field(name="error",value="All users not in voice channel",inline=True)
+
+@ApexBot.command()
+async def join(ctx, members: commands.Greedy[discord.Member], voice: typing.Optional[discord.VoiceChannel]):
+    guild = ctx.message.guild
+
+    if voice == None:
+        j = 1
+        while(1):
+            try:
+                ApexBot.i.index(j)
+            except:
+                ApexBot.i.append(j)
+                break
+            else:
+                j=j+1
+
+        voice = await guild.create_voice_channel("Apex" + str(ApexBot.i[len(ApexBot.i)-1]))
+
+    for mem in members:
+        await mem.move_to(voice)
+        await ctx.channel.send(mem.display_name+" => "+voice.name)
+
+    if len(members) == 0:
+        await (ctx.message.guild.get_member(ctx.message.author.id)).move_to(voice)
+
+
+    '''try:
+        print(voice.name)
+    except:
+        for channel in ctx.guild.voice_channels:
+            if channel.name=="Apex"+ (str(ctx.message.content)).split(" ")[-1]:
+                voice=channel
+                print(voice.name)'''
+
+
+@ApexBot.event
+async def on_voice_state_update(member,before,after):
+    if before.channel!=None:
+        if before.channel.name.startswith('Apex') and len(before.channel.members)==0:
+            await before.channel.delete()
+            ApexBot.i.remove(int(before.channel.name[4:]))
+
+@ApexBot.event
+async def on_command_error(ctx,error):
+    if isinstance(error,commands.CommandInvokeError):
+        print(error)
+        for channel in ctx.message.guild.text_channels:
+            if channel.name == 'general':
+                await channel.send(embed=ApexBot.err_embed)
+
+
+ApexBot.run(TOKEN)
+
